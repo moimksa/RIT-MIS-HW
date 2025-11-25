@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donors | DonorHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/pages.css">
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-heart-pulse"></i>
+                </div>
+                <span class="logo-text">DonorHub</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-angles-left"></i>
+            </button>
+        </div>
+
+        <div class="nav-section">
+            <span class="nav-section-title">Main</span>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="../index.html" class="nav-link">
+                        <i class="fas fa-grid-2"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="donors.html" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span>Donors</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="donations.html" class="nav-link">
+                        <i class="fas fa-hand-holding-heart"></i>
+                        <span>Donations</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="campaigns.html" class="nav-link">
+                        <i class="fas fa-bullhorn"></i>
+                        <span>Campaigns</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <span class="nav-section-title">Finance</span>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="revenue.html" class="nav-link">
+                        <i class="fas fa-arrow-trend-up"></i>
+                        <span>Revenue</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="expenses.html" class="nav-link">
+                        <i class="fas fa-arrow-trend-down"></i>
+                        <span>Expenses</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="reports.html" class="nav-link">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Reports</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <span class="nav-section-title">Inventory</span>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="inventory.html" class="nav-link">
+                        <i class="fas fa-boxes-stacked"></i>
+                        <span>Products</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <span class="nav-section-title">System</span>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="settings.html" class="nav-link">
+                        <i class="fas fa-gear"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-details">
+                    <span class="user-name">Admin User</span>
+                    <span class="user-role">Administrator</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="page-title">
+                    <h1>Donors</h1>
+                    <p class="page-subtitle">Manage your donor database</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search donors..." id="donorSearch">
+                </div>
+                <button class="btn btn-primary" onclick="openModal('newDonorModal')">
+                    <i class="fas fa-plus"></i>
+                    <span>Add Donor</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <!-- Filters -->
+            <div class="filters-bar">
+                <div class="filter-group">
+                    <label>Type</label>
+                    <select id="filterType">
+                        <option value="">All Types</option>
+                        <option value="INDIVIDUAL">Individual</option>
+                        <option value="CORPORATE">Corporate</option>
+                        <option value="FOUNDATION">Foundation</option>
+                        <option value="GOVERNMENT">Government</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Level</label>
+                    <select id="filterLevel">
+                        <option value="">All Levels</option>
+                        <option value="DIAMOND">Diamond</option>
+                        <option value="PLATINUM">Platinum</option>
+                        <option value="GOLD">Gold</option>
+                        <option value="SILVER">Silver</option>
+                        <option value="BRONZE">Bronze</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select id="filterStatus">
+                        <option value="">All Status</option>
+                        <option value="ACTIVE">Active</option>
+                        <option value="INACTIVE">Inactive</option>
+                    </select>
+                </div>
+                <button class="btn btn-secondary" onclick="clearFilters()">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+                <button class="btn btn-outline" onclick="exportDonors()">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+
+            <!-- Donors Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Donor</th>
+                                    <th>Type</th>
+                                    <th>Contact</th>
+                                    <th>Location</th>
+                                    <th>Level</th>
+                                    <th>Total Donations</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="donorsTable">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" id="pagination">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+    </main>
+
+    <!-- New Donor Modal -->
+    <div class="modal-overlay" id="newDonorModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3>Add New Donor</h3>
+                <button class="modal-close" onclick="closeModal('newDonorModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="newDonorForm">
+                    <div class="form-section">
+                        <h4 class="form-section-title">Basic Information</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="donorType">Donor Type *</label>
+                                <select id="donorType" name="donor_type" required>
+                                    <option value="INDIVIDUAL">Individual</option>
+                                    <option value="CORPORATE">Corporate</option>
+                                    <option value="FOUNDATION">Foundation</option>
+                                    <option value="GOVERNMENT">Government</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row" id="individualFields">
+                            <div class="form-group">
+                                <label for="firstName">First Name *</label>
+                                <input type="text" id="firstName" name="first_name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Last Name *</label>
+                                <input type="text" id="lastName" name="last_name" required>
+                            </div>
+                        </div>
+                        <div class="form-row" id="orgField" style="display:none;">
+                            <div class="form-group full-width">
+                                <label for="orgName">Organization Name *</label>
+                                <input type="text" id="orgName" name="organization_name">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4 class="form-section-title">Contact Information</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="email">Email *</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Phone</label>
+                                <input type="tel" id="phone" name="phone">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="address">Address</label>
+                                <input type="text" id="address" name="address_line1">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="city">City</label>
+                                <input type="text" id="city" name="city">
+                            </div>
+                            <div class="form-group">
+                                <label for="country">Country</label>
+                                <input type="text" id="country" name="country" value="United States">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section" id="demographicsSection">
+                        <h4 class="form-section-title">Demographics (Individual Only)</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="gender">Gender</label>
+                                <select id="gender" name="gender">
+                                    <option value="">Select...</option>
+                                    <option value="MALE">Male</option>
+                                    <option value="FEMALE">Female</option>
+                                    <option value="OTHER">Other</option>
+                                    <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="dateOfBirth">Date of Birth</label>
+                                <input type="date" id="dateOfBirth" name="date_of_birth">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="occupation">Occupation</label>
+                                <input type="text" id="occupation" name="occupation">
+                            </div>
+                            <div class="form-group">
+                                <label for="incomeRange">Income Range</label>
+                                <select id="incomeRange" name="income_range">
+                                    <option value="">Select...</option>
+                                    <option value="0-50K">$0 - $50K</option>
+                                    <option value="50K-100K">$50K - $100K</option>
+                                    <option value="100K-200K">$100K - $200K</option>
+                                    <option value="200K-500K">$200K - $500K</option>
+                                    <option value="500K+">$500K+</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4 class="form-section-title">Preferences</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="preferredContact">Preferred Contact</label>
+                                <select id="preferredContact" name="preferred_contact">
+                                    <option value="EMAIL">Email</option>
+                                    <option value="PHONE">Phone</option>
+                                    <option value="MAIL">Mail</option>
+                                    <option value="SMS">SMS</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="donationPreference">Donation Preference</label>
+                                <select id="donationPreference" name="donation_preference">
+                                    <option value="ONE_TIME">One-time</option>
+                                    <option value="MONTHLY">Monthly</option>
+                                    <option value="QUARTERLY">Quarterly</option>
+                                    <option value="ANNUALLY">Annually</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="interests">Interests</label>
+                                <input type="text" id="interests" name="interests" placeholder="e.g., Education, Healthcare, Environment">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="consent_marketing" value="Y">
+                                    <span>Consent to marketing communications</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('newDonorModal')">Cancel</button>
+                <button type="submit" form="newDonorForm" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Donor
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Donor Modal -->
+    <div class="modal-overlay" id="viewDonorModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3>Donor Details</h3>
+                <button class="modal-close" onclick="closeModal('viewDonorModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="donorDetails">
+                <!-- Populated by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('viewDonorModal')">Close</button>
+                <button type="button" class="btn btn-primary" onclick="editDonor()">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Status -->
+    <div class="connection-status" id="connectionStatus">
+        <i class="fas fa-circle"></i>
+        <span>Checking connection...</span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/main.js"></script>
+    <script src="../js/donors.js"></script>
+</body>
+</html>

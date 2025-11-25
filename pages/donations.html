@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donations | DonorHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/pages.css">
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon"><i class="fas fa-heart-pulse"></i></div>
+                <span class="logo-text">DonorHub</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-angles-left"></i></button>
+        </div>
+        <div class="nav-section">
+            <span class="nav-section-title">Main</span>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="../index.html" class="nav-link"><i class="fas fa-grid-2"></i><span>Dashboard</span></a></li>
+                <li class="nav-item"><a href="donors.html" class="nav-link"><i class="fas fa-users"></i><span>Donors</span></a></li>
+                <li class="nav-item active"><a href="donations.html" class="nav-link"><i class="fas fa-hand-holding-heart"></i><span>Donations</span></a></li>
+                <li class="nav-item"><a href="campaigns.html" class="nav-link"><i class="fas fa-bullhorn"></i><span>Campaigns</span></a></li>
+            </ul>
+        </div>
+        <div class="nav-section">
+            <span class="nav-section-title">Finance</span>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="revenue.html" class="nav-link"><i class="fas fa-arrow-trend-up"></i><span>Revenue</span></a></li>
+                <li class="nav-item"><a href="expenses.html" class="nav-link"><i class="fas fa-arrow-trend-down"></i><span>Expenses</span></a></li>
+                <li class="nav-item"><a href="reports.html" class="nav-link"><i class="fas fa-chart-pie"></i><span>Reports</span></a></li>
+            </ul>
+        </div>
+        <div class="nav-section">
+            <span class="nav-section-title">Inventory</span>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="inventory.html" class="nav-link"><i class="fas fa-boxes-stacked"></i><span>Products</span></a></li>
+            </ul>
+        </div>
+        <div class="nav-section">
+            <span class="nav-section-title">System</span>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="settings.html" class="nav-link"><i class="fas fa-gear"></i><span>Settings</span></a></li>
+            </ul>
+        </div>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar"><i class="fas fa-user"></i></div>
+                <div class="user-details">
+                    <span class="user-name">Admin User</span>
+                    <span class="user-role">Administrator</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="header">
+            <div class="header-left">
+                <button class="mobile-menu-btn" id="mobileMenuBtn"><i class="fas fa-bars"></i></button>
+                <div class="page-title">
+                    <h1>Donations</h1>
+                    <p class="page-subtitle">Track and manage all donations</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-primary" onclick="openModal('newDonationModal')">
+                    <i class="fas fa-plus"></i>
+                    <span>Record Donation</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="page-content">
+            <!-- Stats Summary -->
+            <div class="stats-summary">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalDonationsAmount">$0</div>
+                    <div class="stat-label">Total This Year</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="donationCount">0</div>
+                    <div class="stat-label">Total Donations</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="avgDonation">$0</div>
+                    <div class="stat-label">Average Donation</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="recurringDonors">0</div>
+                    <div class="stat-label">Recurring Donors</div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-bar">
+                <div class="filter-group">
+                    <label>Date Range</label>
+                    <select id="filterDateRange">
+                        <option value="all">All Time</option>
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month" selected>This Month</option>
+                        <option value="quarter">This Quarter</option>
+                        <option value="year">This Year</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Payment Method</label>
+                    <select id="filterPayment">
+                        <option value="">All Methods</option>
+                        <option value="CREDIT_CARD">Credit Card</option>
+                        <option value="BANK_TRANSFER">Bank Transfer</option>
+                        <option value="CHECK">Check</option>
+                        <option value="CASH">Cash</option>
+                        <option value="PAYPAL">PayPal</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select id="filterStatus">
+                        <option value="">All Status</option>
+                        <option value="COMPLETED">Completed</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="FAILED">Failed</option>
+                    </select>
+                </div>
+                <button class="btn btn-secondary" onclick="clearFilters()">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+                <button class="btn btn-outline" onclick="exportDonations()">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+
+            <!-- Donations Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Receipt #</th>
+                                    <th>Donor</th>
+                                    <th>Amount</th>
+                                    <th>Campaign</th>
+                                    <th>Payment Method</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="donationsTable">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </main>
+
+    <!-- New Donation Modal -->
+    <div class="modal-overlay" id="newDonationModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3>Record New Donation</h3>
+                <button class="modal-close" onclick="closeModal('newDonationModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="newDonationForm">
+                    <div class="form-section">
+                        <h4 class="form-section-title">Donation Details</h4>
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="donorSelect">Donor *</label>
+                                <select id="donorSelect" name="donor_id" required>
+                                    <option value="">Select a donor...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="donationAmount">Amount *</label>
+                                <input type="number" id="donationAmount" name="amount" step="0.01" min="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="donationDate">Date *</label>
+                                <input type="date" id="donationDate" name="donation_date" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="donationType">Donation Type</label>
+                                <select id="donationType" name="donation_type">
+                                    <option value="ONE_TIME">One-time</option>
+                                    <option value="RECURRING">Recurring</option>
+                                    <option value="PLEDGE">Pledge</option>
+                                    <option value="IN_KIND">In-kind</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="campaignSelect">Campaign</label>
+                                <select id="campaignSelect" name="campaign_id">
+                                    <option value="">No specific campaign</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4 class="form-section-title">Payment Information</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="paymentMethod">Payment Method *</label>
+                                <select id="paymentMethod" name="payment_method" required>
+                                    <option value="CREDIT_CARD">Credit Card</option>
+                                    <option value="BANK_TRANSFER">Bank Transfer</option>
+                                    <option value="CHECK">Check</option>
+                                    <option value="CASH">Cash</option>
+                                    <option value="PAYPAL">PayPal</option>
+                                    <option value="STOCK">Stock</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="paymentStatus">Payment Status</label>
+                                <select id="paymentStatus" name="payment_status">
+                                    <option value="COMPLETED">Completed</option>
+                                    <option value="PENDING">Pending</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="transactionRef">Transaction Reference</label>
+                                <input type="text" id="transactionRef" name="transaction_reference">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4 class="form-section-title">Additional Information</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="is_anonymous" value="Y">
+                                    <span>Anonymous donation</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="tax_deductible" value="Y" checked>
+                                    <span>Tax deductible</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="donationNotes">Notes</label>
+                                <textarea id="donationNotes" name="notes" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('newDonationModal')">Cancel</button>
+                <button type="submit" form="newDonationForm" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Donation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="connection-status" id="connectionStatus">
+        <i class="fas fa-circle"></i>
+        <span>Checking connection...</span>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        // Donations page specific logic
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDonations();
+            populateDonorSelect();
+            populateCampaignSelect();
+            
+            // Set default date
+            document.getElementById('donationDate').valueAsDate = new Date();
+        });
+
+        async function loadDonations() {
+            try {
+                const response = await api.getRecentDonations(50);
+                const donations = response.items || [];
+                
+                // Update stats
+                const total = donations.reduce((sum, d) => sum + (d.amount || 0), 0);
+                document.getElementById('totalDonationsAmount').textContent = formatCurrency(total);
+                document.getElementById('donationCount').textContent = donations.length;
+                document.getElementById('avgDonation').textContent = formatCurrency(donations.length > 0 ? total / donations.length : 0);
+                document.getElementById('recurringDonors').textContent = donations.filter(d => d.donation_type === 'RECURRING').length;
+
+                renderDonationsTable(donations);
+            } catch (error) {
+                console.error('Error loading donations:', error);
+            }
+        }
+
+        function renderDonationsTable(donations) {
+            const tbody = document.getElementById('donationsTable');
+            if (donations.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center" style="padding: 2rem;">No donations found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = donations.map(d => `
+                <tr>
+                    <td><span class="text-muted">${d.receipt_number || 'N/A'}</span></td>
+                    <td><strong>${d.donor_name}</strong></td>
+                    <td><strong style="color: var(--primary-600);">${formatCurrency(d.amount)}</strong></td>
+                    <td>${d.campaign_name || '<span class="text-muted">General</span>'}</td>
+                    <td>${d.payment_method || '-'}</td>
+                    <td>${formatDate(d.donation_date)}</td>
+                    <td>${renderStatusBadge(d.payment_status)}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="action-btn" title="View"><i class="fas fa-eye"></i></button>
+                            <button class="action-btn" title="Receipt"><i class="fas fa-receipt"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function clearFilters() {
+            document.getElementById('filterDateRange').value = 'month';
+            document.getElementById('filterPayment').value = '';
+            document.getElementById('filterStatus').value = '';
+            loadDonations();
+        }
+
+        function exportDonations() {
+            showToast('Export feature will be connected to Oracle APEX', 'info');
+        }
+    </script>
+</body>
+</html>
