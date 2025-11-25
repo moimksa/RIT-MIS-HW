@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的 APEX 作业前端</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; }
+        .card { border: 1px solid #ddd; padding: 20px; border-radius: 8px; max-width: 400px; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>作业前端展示</h1>
+        <p>这里是 GitHub Pages 托管的静态页面。</p>
+        <hr>
+        <p>后端数据状态：<span id="status">正在连接 Oracle APEX...</span></p>
+    </div>
+
+    <script>
+        // 这里将来会写调用 Oracle APEX REST API 的代码
+        // 例如: fetch('https://你的oracle-apex-url/ords/schema/module/handler')
+        
+        setTimeout(() => {
+            document.getElementById('status').innerText = "待配置 API 连接";
+            document.getElementById('status').style.color = "orange";
+        }, 1000);
+    </script>
+</body>
+</html>
