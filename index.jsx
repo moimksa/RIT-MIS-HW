@@ -1,1215 +1,639 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, Area, AreaChart } from 'recharts';
-import { Users, Heart, Gift, Calendar, DollarSign, UserCheck, ChevronRight, Search, Menu, X, TrendingUp, Clock, Package, Building2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  LayoutDashboard, 
+  Users, 
+  Heart, 
+  Gift, 
+  Calendar, 
+  DollarSign, 
+  Menu, 
+  X, 
+  Search,
+  ArrowUpRight,
+  UserCheck,
+  Briefcase,
+  AlertCircle,
+  RefreshCw,
+  TrendingUp
+} from 'lucide-react';
 
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
+// --- Configuration ---
+const API_BASE_URL = 'https://oracleapex.com/ords/nathan_mks/api/v1';
 
-const API_BASE = 'https://oracleapex.com/ords/nathan_mks/api/v1';
+// --- Utils ---
 
-const ROUTES = {
-  DASHBOARD: '',
-  DONORS: 'donors',
-  DONATIONS: 'donations',
-  PERSONNEL: 'personnel',
-  SCHEDULES: 'schedules',
-  PAYMENTS: 'payments',
-  GIFTS: 'gifts',
-  DISTRIBUTIONS: 'distributions',
+const formatCurrency = (amount) => {
+  if (amount === undefined || amount === null) return '$0.00';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
 };
 
-const COLORS = {
-  primary: '#1a5f4a',
-  primaryLight: '#2d8a6e',
-  primaryDark: '#0f3d30',
-  accent: '#d4a853',
-  accentLight: '#e8c97a',
-  background: '#faf9f7',
-  surface: '#ffffff',
-  surfaceAlt: '#f5f3f0',
-  text: '#1a1a1a',
-  textMuted: '#6b6b6b',
-  border: '#e5e2dd',
-  success: '#2d8a6e',
-  warning: '#d4a853',
-  error: '#c45c4a',
+const formatDate = (dateString) => {
+  if (!dateString) return '-';
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  }).format(date);
 };
 
-const CHART_COLORS = ['#1a5f4a', '#2d8a6e', '#4aa88a', '#d4a853', '#e8c97a', '#8b7355', '#c45c4a', '#6b8e8a'];
-
-// ============================================================================
-// UTILITIES
-// ============================================================================
-
-async function fetchData(endpoint) {
-  const response = await fetch(`${API_BASE}${endpoint}`);
-  const data = await response.json();
-  return data.items || data;
-}
-
-function formatCurrency(amount) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
-}
-
-function formatDate(dateString) {
-  if (!dateString) return '—';
-  return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function formatDateShort(dateString) {
-  if (!dateString) return '—';
-  return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-// ============================================================================
-// STYLES
-// ============================================================================
-
-const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
-
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  :root {
-    --primary: ${COLORS.primary};
-    --primary-light: ${COLORS.primaryLight};
-    --primary-dark: ${COLORS.primaryDark};
-    --accent: ${COLORS.accent};
-    --accent-light: ${COLORS.accentLight};
-    --background: ${COLORS.background};
-    --surface: ${COLORS.surface};
-    --surface-alt: ${COLORS.surfaceAlt};
-    --text: ${COLORS.text};
-    --text-muted: ${COLORS.textMuted};
-    --border: ${COLORS.border};
-  }
-
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--background);
-    color: var(--text);
-    line-height: 1.6;
-  }
-
-  .app-container {
-    display: flex;
-    min-height: 100vh;
-  }
-
-  /* Sidebar */
-  .sidebar {
-    width: 280px;
-    background: linear-gradient(180deg, var(--primary-dark) 0%, var(--primary) 100%);
-    color: white;
-    padding: 32px 0;
-    position: fixed;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    z-index: 100;
-    transition: transform 0.3s ease;
-  }
-
-  .sidebar-header {
-    padding: 0 28px 32px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    margin-bottom: 24px;
-  }
-
-  .sidebar-logo {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 28px;
-    font-weight: 600;
-    letter-spacing: -0.5px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .sidebar-logo-icon {
-    width: 40px;
-    height: 40px;
-    background: var(--accent);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .sidebar-nav {
-    flex: 1;
-    padding: 0 16px;
-  }
-
-  .nav-section {
-    margin-bottom: 24px;
-  }
-
-  .nav-section-title {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: rgba(255,255,255,0.4);
-    padding: 0 12px;
-    margin-bottom: 8px;
-  }
-
-  .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    border-radius: 10px;
-    color: rgba(255,255,255,0.7);
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    margin-bottom: 4px;
-  }
-
-  .nav-item:hover {
-    background: rgba(255,255,255,0.1);
-    color: white;
-  }
-
-  .nav-item.active {
-    background: rgba(255,255,255,0.15);
-    color: white;
-  }
-
-  .nav-item.active::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    width: 3px;
-    height: 24px;
-    background: var(--accent);
-    border-radius: 0 3px 3px 0;
-  }
-
-  .nav-icon {
-    width: 20px;
-    height: 20px;
-    opacity: 0.8;
-  }
-
-  /* Main Content */
-  .main-content {
-    flex: 1;
-    margin-left: 280px;
-    padding: 32px 40px;
-    min-height: 100vh;
-  }
-
-  .page-header {
-    margin-bottom: 32px;
-  }
-
-  .page-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 36px;
-    font-weight: 600;
-    color: var(--text);
-    letter-spacing: -0.5px;
-    margin-bottom: 8px;
-  }
-
-  .page-subtitle {
-    color: var(--text-muted);
-    font-size: 15px;
-  }
-
-  /* Stats Grid */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 20px;
-    margin-bottom: 32px;
-  }
-
-  .stat-card {
-    background: var(--surface);
-    border-radius: 16px;
-    padding: 24px;
-    border: 1px solid var(--border);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--primary), var(--accent));
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  .stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-  }
-
-  .stat-card:hover::before {
-    opacity: 1;
-  }
-
-  .stat-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 16px;
-  }
-
-  .stat-icon.green { background: rgba(26, 95, 74, 0.1); color: var(--primary); }
-  .stat-icon.gold { background: rgba(212, 168, 83, 0.1); color: var(--accent); }
-  .stat-icon.teal { background: rgba(45, 138, 110, 0.1); color: var(--primary-light); }
-
-  .stat-value {
-    font-size: 32px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 4px;
-    font-family: 'DM Sans', sans-serif;
-  }
-
-  .stat-label {
-    color: var(--text-muted);
-    font-size: 14px;
-    font-weight: 500;
-  }
-
-  /* Cards & Tables */
-  .card {
-    background: var(--surface);
-    border-radius: 16px;
-    border: 1px solid var(--border);
-    overflow: hidden;
-    margin-bottom: 24px;
-  }
-
-  .card-header {
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .card-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--text);
-  }
-
-  .card-body {
-    padding: 24px;
-  }
-
-  .data-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .data-table th {
-    text-align: left;
-    padding: 14px 16px;
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-muted);
-    background: var(--surface-alt);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .data-table td {
-    padding: 16px;
-    border-bottom: 1px solid var(--border);
-    font-size: 14px;
-    vertical-align: middle;
-  }
-
-  .data-table tr:last-child td {
-    border-bottom: none;
-  }
-
-  .data-table tr:hover td {
-    background: var(--surface-alt);
-  }
-
-  /* Badges */
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  .badge-primary { background: rgba(26, 95, 74, 0.1); color: var(--primary); }
-  .badge-accent { background: rgba(212, 168, 83, 0.15); color: #9a7b30; }
-  .badge-success { background: rgba(45, 138, 110, 0.1); color: var(--success); }
-  .badge-warning { background: rgba(212, 168, 83, 0.15); color: #9a7b30; }
-  .badge-muted { background: var(--surface-alt); color: var(--text-muted); }
-
-  /* Grid Layouts */
-  .grid-2 {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 24px;
-  }
-
-  .grid-3 {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-  }
-
-  /* Search Bar */
-  .search-bar {
-    position: relative;
-    margin-bottom: 24px;
-  }
-
-  .search-input {
-    width: 100%;
-    max-width: 400px;
-    padding: 12px 16px 12px 44px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    font-size: 14px;
-    background: var(--surface);
-    transition: all 0.2s ease;
-  }
-
-  .search-input:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(26, 95, 74, 0.1);
-  }
-
-  .search-icon {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
-    width: 18px;
-    height: 18px;
-  }
-
-  /* Chart Container */
-  .chart-container {
-    height: 300px;
-    margin-top: 16px;
-  }
-
-  /* List Items */
-  .list-item {
-    display: flex;
-    align-items: center;
-    padding: 16px;
-    border-bottom: 1px solid var(--border);
-    transition: background 0.2s ease;
-  }
-
-  .list-item:last-child {
-    border-bottom: none;
-  }
-
-  .list-item:hover {
-    background: var(--surface-alt);
-  }
-
-  .list-item-avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--primary), var(--primary-light));
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    font-size: 16px;
-    margin-right: 16px;
-  }
-
-  .list-item-content {
-    flex: 1;
-  }
-
-  .list-item-title {
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 2px;
-  }
-
-  .list-item-subtitle {
-    font-size: 13px;
-    color: var(--text-muted);
-  }
-
-  .list-item-value {
-    font-weight: 600;
-    color: var(--primary);
-  }
-
-  /* Mobile Menu Toggle */
-  .mobile-menu-toggle {
-    display: none;
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    z-index: 200;
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    background: var(--primary);
-    color: white;
-    border: none;
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* Animations */
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .animate-in {
-    animation: fadeIn 0.4s ease forwards;
-  }
-
-  .delay-1 { animation-delay: 0.1s; }
-  .delay-2 { animation-delay: 0.2s; }
-  .delay-3 { animation-delay: 0.3s; }
-  .delay-4 { animation-delay: 0.4s; }
-
-  /* Responsive */
-  @media (max-width: 1024px) {
-    .grid-2, .grid-3 {
-      grid-template-columns: 1fr;
+// --- Components ---
+
+const Card = ({ title, value, icon: Icon, subValue, trend }) => (
+  <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-slate-100 hover:shadow-lg transition-all duration-300 group">
+    <div className="flex items-start justify-between">
+      <div>
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{title}</p>
+        <h3 className="text-3xl font-bold text-slate-800 tracking-tight group-hover:text-indigo-600 transition-colors">
+          {value}
+        </h3>
+        {subValue && (
+          <div className="flex items-center mt-2 gap-2">
+            {trend && <span className="bg-green-50 text-green-700 text-xs px-1.5 py-0.5 rounded font-medium flex items-center">+{trend}%</span>}
+            <p className="text-xs text-slate-400 font-medium">{subValue}</p>
+          </div>
+        )}
+      </div>
+      <div className="p-3 rounded-xl bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 shadow-sm">
+        <Icon className="w-6 h-6" />
+      </div>
+    </div>
+  </div>
+);
+
+const ModernBarChart = ({ data }) => {
+  if (!data || data.length === 0) return (
+    <div className="h-72 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50">
+      <AlertCircle className="w-8 h-8 mb-2 opacity-50" />
+      <span className="text-sm">No data available</span>
+    </div>
+  );
+  
+  const maxVal = Math.max(...data.map(d => d.TOTAL_AMOUNT));
+  
+  return (
+    <div className="h-72 w-full pt-12 pb-2">
+      <div className="h-full flex items-end justify-between gap-4">
+        {data.map((item, idx) => {
+          const heightPercent = maxVal > 0 ? (item.TOTAL_AMOUNT / maxVal) * 100 : 0;
+          return (
+            <div key={idx} className="flex flex-col items-center flex-1 h-full group cursor-default">
+               <div className="relative flex-1 w-full flex items-end justify-center">
+                  {/* Tooltip */}
+                  <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 pointer-events-none">
+                    <div className="bg-slate-800 text-white text-xs font-semibold py-1.5 px-3 rounded-lg shadow-xl mb-2 whitespace-nowrap">
+                      {formatCurrency(item.TOTAL_AMOUNT)}
+                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45"></div>
+                    </div>
+                  </div>
+                  
+                  {/* Bar */}
+                  <div 
+                    className="w-full max-w-[48px] bg-gradient-to-t from-indigo-500 to-blue-400 rounded-t-lg opacity-80 group-hover:opacity-100 transition-all duration-300 relative overflow-hidden shadow-sm group-hover:shadow-indigo-200"
+                    style={{ height: `${heightPercent}%` }}
+                  >
+                    <div className="absolute top-0 left-0 w-full h-1 bg-white/20"></div>
+                  </div>
+               </div>
+              <p className="text-[10px] sm:text-xs font-medium text-slate-400 mt-3 uppercase tracking-wide">{item.MONTH}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const Table = ({ columns, data, loading, keyField = 'ID' }) => {
+  if (loading) return (
+    <div className="w-full p-12 space-y-4">
+      {[1, 2, 3].map(i => (
+        <div key={i} className="h-16 bg-slate-50 rounded-lg animate-pulse"></div>
+      ))}
+    </div>
+  );
+  
+  if (!data || data.length === 0) return (
+    <div className="p-12 text-center flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 rounded-xl border border-slate-100">
+      <Search className="w-10 h-10 mb-3 opacity-20" />
+      <p>No records found</p>
+    </div>
+  );
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm bg-white">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left">
+          <thead className="text-xs text-slate-500 uppercase bg-slate-50/80 border-b border-slate-200">
+            <tr>
+              {columns.map((col, idx) => (
+                <th key={idx} className="px-6 py-4 font-semibold tracking-wider text-slate-600">
+                  {col.header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {data.map((item, rowIdx) => (
+              <tr key={item[keyField] || rowIdx} className="hover:bg-slate-50/80 transition-colors group">
+                {columns.map((col, colIdx) => (
+                  <td key={colIdx} className="px-6 py-4 whitespace-nowrap text-slate-600">
+                    {col.render ? col.render(item) : item[col.accessor]}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+const Badge = ({ children, type = 'default', dot = false }) => {
+  const styles = {
+    success: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    warning: 'bg-amber-50 text-amber-700 border-amber-100',
+    info: 'bg-blue-50 text-blue-700 border-blue-100',
+    purple: 'bg-purple-50 text-purple-700 border-purple-100',
+    danger: 'bg-rose-50 text-rose-700 border-rose-100',
+    default: 'bg-slate-100 text-slate-600 border-slate-200'
+  };
+
+  const dotStyles = {
+    success: 'bg-emerald-500',
+    warning: 'bg-amber-500',
+    info: 'bg-blue-500',
+    purple: 'bg-purple-500',
+    danger: 'bg-rose-500',
+    default: 'bg-slate-400'
+  };
+
+  return (
+    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${styles[type] || styles.default} inline-flex items-center gap-1.5`}>
+      {dot && <span className={`w-1.5 h-1.5 rounded-full ${dotStyles[type] || dotStyles.default}`}></span>}
+      {children}
+    </span>
+  );
+};
+
+const ErrorState = ({ message, onRetry }) => (
+  <div className="flex flex-col items-center justify-center p-12 text-center bg-white rounded-2xl border border-rose-100 shadow-sm">
+    <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mb-4">
+      <AlertCircle className="w-6 h-6" />
+    </div>
+    <h3 className="text-lg font-bold text-slate-800 mb-2">Connection Error</h3>
+    <p className="text-slate-500 max-w-sm mb-6">{message}</p>
+    <button 
+      onClick={onRetry}
+      className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium"
+    >
+      <RefreshCw className="w-4 h-4" />
+      Retry Connection
+    </button>
+  </div>
+);
+
+// --- Main App ---
+export default function App() {
+  const [currentView, setCurrentView] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [dataCache, setDataCache] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Core Data Fetching Logic - NO MOCK FALLBACK
+  const fetchData = async (endpoint, cacheKey) => {
+    // Return cached data if available to reduce API calls
+    if (dataCache[cacheKey]) return; 
+
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Status ${response.status}: Failed to fetch data`);
+      }
+      
+      const data = await response.json();
+      
+      // Store in cache
+      setDataCache(prev => ({ ...prev, [cacheKey]: data.items || data }));
+    } catch (err) {
+      console.error(`API Error for ${endpoint}:`, err);
+      setError(`Could not retrieve data from the server. Ensure the Oracle APEX API is accessible and supports CORS.`);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-  @media (max-width: 768px) {
-    .sidebar {
-      transform: translateX(-100%);
-    }
+  // View-based Data Loading
+  useEffect(() => {
+    const loadViewData = async () => {
+      switch(currentView) {
+        case 'dashboard':
+          await Promise.all([
+            fetchData('/stats/summary', 'summary'),
+            fetchData('/stats/monthly', 'monthly')
+          ]);
+          break;
+        case 'donors':
+          await fetchData('/donors', 'donors');
+          break;
+        case 'donations':
+          await fetchData('/donations', 'donations');
+          break;
+        case 'personnel':
+          await fetchData('/personnel', 'personnel');
+          break;
+        case 'gifts':
+          await Promise.all([
+            fetchData('/gift-types', 'giftTypes'),
+            fetchData('/gift-distributions', 'giftDistributions')
+          ]);
+          break;
+        default:
+          break;
+      }
+    };
+    
+    loadViewData();
+  }, [currentView]);
 
-    .sidebar.open {
-      transform: translateX(0);
-    }
-
-    .main-content {
-      margin-left: 0;
-      padding: 80px 20px 20px;
-    }
-
-    .mobile-menu-toggle {
-      display: flex;
-    }
-
-    .stats-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .page-title {
-      font-size: 28px;
-    }
-  }
-`;
-
-// ============================================================================
-// COMPONENTS
-// ============================================================================
-
-function Sidebar({ currentRoute, onNavigate, isOpen, onClose }) {
   const navItems = [
-    { route: ROUTES.DASHBOARD, label: 'Dashboard', icon: TrendingUp },
-    { route: ROUTES.DONORS, label: 'Donors', icon: Users },
-    { route: ROUTES.DONATIONS, label: 'Donations', icon: Heart },
-    { route: ROUTES.PERSONNEL, label: 'Personnel', icon: UserCheck },
-    { route: ROUTES.SCHEDULES, label: 'Schedules', icon: Calendar },
-    { route: ROUTES.PAYMENTS, label: 'Payments', icon: DollarSign },
-    { route: ROUTES.GIFTS, label: 'Gift Types', icon: Package },
-    { route: ROUTES.DISTRIBUTIONS, label: 'Distributions', icon: Gift },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'donors', label: 'Donors', icon: Users },
+    { id: 'donations', label: 'Donations', icon: Heart },
+    { id: 'personnel', label: 'Personnel', icon: Calendar },
+    { id: 'gifts', label: 'Gifts & Inventory', icon: Gift },
   ];
 
-  return (
-    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
-      <div className="sidebar-header">
-        <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">
-            <Heart size={20} />
-          </div>
-          GiveWell
+  const renderContent = () => {
+    if (error && !loading) {
+      return (
+        <div className="h-full flex items-center justify-center">
+          <ErrorState 
+            message={error} 
+            onRetry={() => {
+              setDataCache({}); // Clear cache to force retry
+              const view = currentView;
+              setCurrentView('dashboard'); // Toggle view to trigger effect
+              setTimeout(() => setCurrentView(view), 10);
+            }} 
+          />
         </div>
-      </div>
+      );
+    }
 
-      <nav className="sidebar-nav">
-        <div className="nav-section">
-          <div className="nav-section-title">Overview</div>
-          {navItems.slice(0, 1).map(item => (
-            <div
-              key={item.route}
-              className={`nav-item ${currentRoute === item.route ? 'active' : ''}`}
-              onClick={() => { onNavigate(item.route); onClose(); }}
-            >
-              <item.icon className="nav-icon" />
-              {item.label}
+    // Global loading state for initial load (optional, can be per-component)
+    // if (loading && !Object.keys(dataCache).length) return <div className="...">Loading...</div>;
+
+    switch (currentView) {
+      case 'dashboard':
+        const summary = dataCache['summary'] || {};
+        const monthly = dataCache['monthly'] || [];
+        
+        return (
+          <div className="space-y-8 animate-fade-in max-w-7xl mx-auto">
+            <div className="flex flex-col gap-2 mb-8">
+              <h2 className="text-2xl font-bold text-slate-800">Overview</h2>
+              <p className="text-slate-500">Key metrics and performance indicators for your organization.</p>
             </div>
-          ))}
-        </div>
 
-        <div className="nav-section">
-          <div className="nav-section-title">Fundraising</div>
-          {navItems.slice(1, 3).map(item => (
-            <div
-              key={item.route}
-              className={`nav-item ${currentRoute === item.route ? 'active' : ''}`}
-              onClick={() => { onNavigate(item.route); onClose(); }}
-            >
-              <item.icon className="nav-icon" />
-              {item.label}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+              <Card 
+                title="Total Revenue" 
+                value={formatCurrency(summary.TOTAL_AMOUNT || 0)} 
+                subValue={`${summary.TOTAL_DONATIONS || 0} Donations recorded`} 
+                icon={DollarSign} 
+                trend="12.5"
+              />
+              <Card 
+                title="Active Donors" 
+                value={summary.TOTAL_DONORS || 0} 
+                subValue="Last 30 days" 
+                icon={Users} 
+                trend="4.2"
+              />
+              <Card 
+                title="Gifts Distributed" 
+                value={summary.TOTAL_DISTRIBUTIONS || 0} 
+                subValue="Items sent out" 
+                icon={Gift} 
+              />
+              <Card 
+                title="Team Members" 
+                value={(summary.TOTAL_EMPLOYEES || 0) + (summary.TOTAL_VOLUNTEERS || 0)} 
+                subValue="Employees & Volunteers" 
+                icon={Briefcase} 
+              />
             </div>
-          ))}
-        </div>
 
-        <div className="nav-section">
-          <div className="nav-section-title">Operations</div>
-          {navItems.slice(3, 6).map(item => (
-            <div
-              key={item.route}
-              className={`nav-item ${currentRoute === item.route ? 'active' : ''}`}
-              onClick={() => { onNavigate(item.route); onClose(); }}
-            >
-              <item.icon className="nav-icon" />
-              {item.label}
-            </div>
-          ))}
-        </div>
-
-        <div className="nav-section">
-          <div className="nav-section-title">Gifts</div>
-          {navItems.slice(6).map(item => (
-            <div
-              key={item.route}
-              className={`nav-item ${currentRoute === item.route ? 'active' : ''}`}
-              onClick={() => { onNavigate(item.route); onClose(); }}
-            >
-              <item.icon className="nav-icon" />
-              {item.label}
-            </div>
-          ))}
-        </div>
-      </nav>
-    </aside>
-  );
-}
-
-function StatCard({ icon: Icon, value, label, color = 'green', delay = 0 }) {
-  return (
-    <div className={`stat-card animate-in delay-${delay}`}>
-      <div className={`stat-icon ${color}`}>
-        <Icon size={24} />
-      </div>
-      <div className="stat-value">{value}</div>
-      <div className="stat-label">{label}</div>
-    </div>
-  );
-}
-
-function SearchBar({ value, onChange, placeholder = 'Search...' }) {
-  return (
-    <div className="search-bar">
-      <Search className="search-icon" />
-      <input
-        type="text"
-        className="search-input"
-        placeholder={placeholder}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-      />
-    </div>
-  );
-}
-
-// ============================================================================
-// PAGES
-// ============================================================================
-
-function Dashboard() {
-  const [stats, setStats] = useState(null);
-  const [monthlyData, setMonthlyData] = useState([]);
-  const [recentDonations, setRecentDonations] = useState([]);
-  const [donations, setDonations] = useState([]);
-
-  useEffect(() => {
-    fetchData('/stats/summary').then(setStats);
-    fetchData('/stats/monthly').then(data => setMonthlyData(data || []));
-    fetchData('/donations').then(data => {
-      setDonations(data || []);
-      setRecentDonations((data || []).slice(0, 5));
-    });
-  }, []);
-
-  const categoryData = useMemo(() => {
-    const grouped = donations.reduce((acc, d) => {
-      acc[d.CATEGORY] = (acc[d.CATEGORY] || 0) + (d.AMOUNT || 0);
-      return acc;
-    }, {});
-    return Object.entries(grouped).map(([name, value]) => ({ name, value }));
-  }, [donations]);
-
-  return (
-    <div>
-      <div className="page-header">
-        <h1 className="page-title">Dashboard</h1>
-        <p className="page-subtitle">Overview of your organization's activity</p>
-      </div>
-
-      <div className="stats-grid">
-        <StatCard icon={Users} value={stats?.TOTAL_DONORS || 0} label="Total Donors" color="green" delay={1} />
-        <StatCard icon={Heart} value={stats?.TOTAL_DONATIONS || 0} label="Donations" color="gold" delay={2} />
-        <StatCard icon={DollarSign} value={formatCurrency(stats?.TOTAL_AMOUNT)} label="Total Raised" color="teal" delay={3} />
-        <StatCard icon={UserCheck} value={(stats?.TOTAL_EMPLOYEES || 0) + (stats?.TOTAL_VOLUNTEERS || 0)} label="Team Members" color="green" delay={4} />
-      </div>
-
-      <div className="grid-2">
-        <div className="card animate-in delay-2">
-          <div className="card-header">
-            <h3 className="card-title">Monthly Donations</h3>
-          </div>
-          <div className="card-body">
-            <div className="chart-container">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthlyData}>
-                  <defs>
-                    <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="MONTH" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={false} tickFormatter={v => `$${v/1000}k`} />
-                  <Tooltip formatter={v => formatCurrency(v)} />
-                  <Area type="monotone" dataKey="TOTAL_AMOUNT" stroke={COLORS.primary} strokeWidth={2} fill="url(#colorAmount)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        <div className="card animate-in delay-3">
-          <div className="card-header">
-            <h3 className="card-title">By Category</h3>
-          </div>
-          <div className="card-body">
-            <div className="chart-container">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={2}
-                    dataKey="value"
-                  >
-                    {categoryData.map((entry, i) => (
-                      <Cell key={entry.name} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={v => formatCurrency(v)} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="card animate-in delay-4">
-        <div className="card-header">
-          <h3 className="card-title">Recent Donations</h3>
-        </div>
-        <div className="card-body" style={{ padding: 0 }}>
-          {recentDonations.map(d => (
-            <div key={d.DONATION_ID} className="list-item">
-              <div className="list-item-avatar">
-                {(d.DONOR_NAME || 'A')[0]}
-              </div>
-              <div className="list-item-content">
-                <div className="list-item-title">{d.DONOR_NAME || 'Anonymous'}</div>
-                <div className="list-item-subtitle">{d.CATEGORY} · {formatDateShort(d.DONATION_DATE)}</div>
-              </div>
-              <div className="list-item-value">{formatCurrency(d.AMOUNT)}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DonorsPage() {
-  const [donors, setDonors] = useState([]);
-  const [search, setSearch] = useState('');
-
-  useEffect(() => { fetchData('/donors').then(setDonors); }, []);
-
-  const filtered = useMemo(() => {
-    if (!search) return donors;
-    const s = search.toLowerCase();
-    return donors.filter(d =>
-      `${d.FIRSTNAME} ${d.LASTNAME}`.toLowerCase().includes(s) ||
-      (d.CONTACT_INFO || '').toLowerCase().includes(s)
-    );
-  }, [donors, search]);
-
-  return (
-    <div>
-      <div className="page-header">
-        <h1 className="page-title">Donors</h1>
-        <p className="page-subtitle">Manage your donor relationships</p>
-      </div>
-
-      <SearchBar value={search} onChange={setSearch} placeholder="Search donors..." />
-
-      <div className="card animate-in">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Contact</th>
-              <th>Location</th>
-              <th>Segment</th>
-              <th>Age</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(d => (
-              <tr key={d.DONOR_ID}>
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div className="list-item-avatar" style={{ width: 36, height: 36, fontSize: 14 }}>
-                      {d.FIRSTNAME?.[0]}{d.LASTNAME?.[0]}
-                    </div>
-                    <strong>{d.FIRSTNAME} {d.LASTNAME}</strong>
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <div className="xl:col-span-2 bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-100">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800">Donation Trends</h3>
+                    <p className="text-sm text-slate-400">Monthly breakdown of received funds</p>
                   </div>
-                </td>
-                <td>{d.CONTACT_INFO || '—'}</td>
-                <td>{d.LOCATION || '—'}</td>
-                <td><span className="badge badge-primary">{d.DEMOGRAPHIC_SEGMENT || '—'}</span></td>
-                <td>{d.AGE || '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function DonationsPage() {
-  const [donations, setDonations] = useState([]);
-  const [search, setSearch] = useState('');
-
-  useEffect(() => { fetchData('/donations').then(setDonations); }, []);
-
-  const filtered = useMemo(() => {
-    if (!search) return donations;
-    const s = search.toLowerCase();
-    return donations.filter(d =>
-      (d.DONOR_NAME || '').toLowerCase().includes(s) ||
-      (d.CATEGORY || '').toLowerCase().includes(s)
-    );
-  }, [donations, search]);
-
-  return (
-    <div>
-      <div className="page-header">
-        <h1 className="page-title">Donations</h1>
-        <p className="page-subtitle">Track all donation records</p>
-      </div>
-
-      <SearchBar value={search} onChange={setSearch} placeholder="Search donations..." />
-
-      <div className="card animate-in">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Donor</th>
-              <th>Amount</th>
-              <th>Category</th>
-              <th>Source</th>
-              <th>Date</th>
-              <th>Tax Receipt</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(d => (
-              <tr key={d.DONATION_ID}>
-                <td><strong>{d.DONOR_NAME || 'Anonymous'}</strong></td>
-                <td style={{ color: COLORS.primary, fontWeight: 600 }}>{formatCurrency(d.AMOUNT)}</td>
-                <td><span className="badge badge-accent">{d.CATEGORY}</span></td>
-                <td>{d.SOURCE}</td>
-                <td>{formatDate(d.DONATION_DATE)}</td>
-                <td>{d.REQUIRES_TAX_RECEIPT === 1 ? <span className="badge badge-success">Yes</span> : <span className="badge badge-muted">No</span>}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function PersonnelPage() {
-  const [personnel, setPersonnel] = useState([]);
-  const [search, setSearch] = useState('');
-
-  useEffect(() => { fetchData('/personnel').then(setPersonnel); }, []);
-
-  const filtered = useMemo(() => {
-    if (!search) return personnel;
-    const s = search.toLowerCase();
-    return personnel.filter(p =>
-      `${p.FIRSTNAME} ${p.LASTNAME}`.toLowerCase().includes(s) ||
-      (p.ROLE || '').toLowerCase().includes(s)
-    );
-  }, [personnel, search]);
-
-  return (
-    <div>
-      <div className="page-header">
-        <h1 className="page-title">Personnel</h1>
-        <p className="page-subtitle">Employees and volunteers</p>
-      </div>
-
-      <SearchBar value={search} onChange={setSearch} placeholder="Search personnel..." />
-
-      <div className="card animate-in">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Role</th>
-              <th>Type</th>
-              <th>Access Level</th>
-              <th>Contact</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(p => (
-              <tr key={p.PERSONNEL_ID}>
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div className="list-item-avatar" style={{ width: 36, height: 36, fontSize: 14, background: p.IS_EMPLOYEE === 1 ? `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primaryLight})` : `linear-gradient(135deg, ${COLORS.accent}, ${COLORS.accentLight})` }}>
-                      {p.FIRSTNAME?.[0]}{p.LASTNAME?.[0]}
-                    </div>
-                    <strong>{p.FIRSTNAME} {p.LASTNAME}</strong>
+                  <div className="p-2 bg-slate-50 rounded-lg text-slate-400">
+                    <TrendingUp size={20} />
                   </div>
-                </td>
-                <td>{p.ROLE}</td>
-                <td>
-                  {p.IS_EMPLOYEE === 1 && <span className="badge badge-primary" style={{ marginRight: 6 }}>Employee</span>}
-                  {p.IS_VOLUNTEER === 1 && <span className="badge badge-accent">Volunteer</span>}
-                </td>
-                <td><span className="badge badge-muted">{p.ACCESS_LEVEL}</span></td>
-                <td>{p.CONTACT_INFO || '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
+                </div>
+                <ModernBarChart data={monthly} />
+              </div>
 
-function SchedulesPage() {
-  const [schedules, setSchedules] = useState([]);
-  const [search, setSearch] = useState('');
+              <div className="bg-gradient-to-br from-indigo-600 to-violet-700 p-8 rounded-2xl shadow-xl text-white flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-12 bg-white opacity-5 rounded-full transform translate-x-10 -translate-y-10"></div>
+                <div className="absolute bottom-0 left-0 p-16 bg-black opacity-10 rounded-full transform -translate-x-10 translate-y-10"></div>
+                
+                <div className="relative z-10">
+                  <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-6">
+                    <Heart className="w-6 h-6 text-white" fill="currentColor" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-2">Our Mission Impact</h3>
+                  <p className="text-indigo-100 leading-relaxed mb-8">
+                    Your team has facilitated <span className="font-bold text-white">{summary.TOTAL_DONATIONS || 0}</span> donations this year, helping us reach our annual goal.
+                  </p>
+                </div>
+                
+                <button className="relative z-10 w-full py-3 bg-white text-indigo-700 rounded-xl font-semibold hover:bg-indigo-50 transition-colors shadow-lg">
+                  View Detailed Report
+                </button>
+              </div>
+            </div>
+          </div>
+        );
 
-  useEffect(() => { fetchData('/schedules').then(setSchedules); }, []);
+      case 'donors':
+        return (
+          <div className="space-y-6 max-w-7xl mx-auto">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-800">Donor Directory</h2>
+                <p className="text-slate-500 text-sm mt-1">Manage donor profiles and contact information.</p>
+              </div>
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <input 
+                  type="text" 
+                  placeholder="Search donors..." 
+                  className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm"
+                />
+              </div>
+            </div>
+            
+            <Table 
+              keyField="DONOR_ID"
+              data={dataCache['donors']} 
+              loading={loading && !dataCache['donors']}
+              columns={[
+                { header: 'ID', accessor: 'DONOR_ID' },
+                { header: 'Name', render: (item) => (
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">
+                      {item.FIRSTNAME?.[0]}{item.LASTNAME?.[0]}
+                    </div>
+                    <span className="font-medium text-slate-900">{item.FIRSTNAME} {item.LASTNAME}</span>
+                  </div>
+                )},
+                { header: 'Contact', accessor: 'CONTACT_INFO' },
+                { header: 'Segment', render: (item) => <Badge type="info" dot>{item.DEMOGRAPHIC_SEGMENT}</Badge> },
+                { header: 'Location', accessor: 'LOCATION' },
+                { header: 'Actions', render: () => (
+                  <button className="text-indigo-600 hover:text-indigo-800 font-medium text-xs flex items-center gap-1">
+                    View <ArrowUpRight size={14} />
+                  </button>
+                )}
+              ]} 
+            />
+          </div>
+        );
 
-  const filtered = useMemo(() => {
-    if (!search) return schedules;
-    const s = search.toLowerCase();
-    return schedules.filter(sc =>
-      (sc.PERSONNEL_NAME || '').toLowerCase().includes(s) ||
-      (sc.TYPE || '').toLowerCase().includes(s)
-    );
-  }, [schedules, search]);
+      case 'donations':
+        return (
+          <div className="space-y-6 max-w-7xl mx-auto">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-slate-800">Donation History</h2>
+            </div>
+            <Table 
+              keyField="DONATION_ID"
+              data={dataCache['donations']} 
+              loading={loading && !dataCache['donations']}
+              columns={[
+                { header: 'Date', render: (item) => (
+                  <span className="text-slate-500 tabular-nums">{formatDate(item.DONATION_DATE)}</span>
+                )},
+                { header: 'Donor', render: (item) => (
+                   <span className="font-medium text-slate-900">{item.DONOR_NAME}</span>
+                )},
+                { header: 'Amount', render: (item) => (
+                  <span className="font-bold text-slate-800 tabular-nums">{formatCurrency(item.AMOUNT)}</span>
+                )},
+                { header: 'Category', render: (item) => <Badge type="purple">{item.CATEGORY}</Badge> },
+                { header: 'Source', render: (item) => <span className="text-slate-500 text-xs uppercase tracking-wide font-medium">{item.SOURCE}</span> },
+              ]} 
+            />
+          </div>
+        );
 
-  const statusColor = status => {
-    switch (status) {
-      case 'Available': return 'badge-success';
-      case 'Busy': return 'badge-warning';
-      default: return 'badge-muted';
+      case 'personnel':
+        return (
+          <div className="space-y-6 max-w-7xl mx-auto">
+             <h2 className="text-2xl font-bold text-slate-800">Personnel & Staffing</h2>
+             <Table 
+                keyField="PERSONNEL_ID"
+                data={dataCache['personnel']} 
+                loading={loading && !dataCache['personnel']}
+                columns={[
+                  { header: 'Name', render: (item) => (
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${item.IS_EMPLOYEE === 1 ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-100 text-amber-600'}`}>
+                        {item.FIRSTNAME?.[0]}{item.LASTNAME?.[0]}
+                      </div>
+                      <div className="font-medium text-slate-900">{item.FIRSTNAME} {item.LASTNAME}</div>
+                    </div>
+                  )},
+                  { header: 'Role', accessor: 'ROLE' },
+                  { header: 'Status', render: (item) => (
+                    <div className="flex gap-2">
+                      {item.IS_EMPLOYEE === 1 && <Badge type="success" dot>Employee</Badge>}
+                      {item.IS_VOLUNTEER === 1 && <Badge type="warning" dot>Volunteer</Badge>}
+                    </div>
+                  )},
+                  { header: 'Contact', accessor: 'CONTACT_INFO' },
+                ]} 
+              />
+          </div>
+        );
+
+      case 'gifts':
+        return (
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-slate-800">Gift Catalog</h2>
+                <button className="text-sm text-indigo-600 font-medium hover:underline">Add New Type</button>
+              </div>
+              <Table 
+                keyField="GIFT_TYPE_ID"
+                data={dataCache['giftTypes']} 
+                loading={loading && !dataCache['giftTypes']}
+                columns={[
+                  { header: 'Item Name', render: (item) => <span className="font-medium text-slate-700">{item.NAME}</span> },
+                  { header: 'Category', accessor: 'CATEGORY' },
+                  { header: 'Value', render: (item) => <span className="text-slate-500 tabular-nums">{formatCurrency(item.VALUE)}</span> },
+                ]} 
+              />
+            </div>
+            
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-slate-800">Recent Distributions</h2>
+                <button className="text-sm text-indigo-600 font-medium hover:underline">View All</button>
+              </div>
+              <Table 
+                keyField="DISTRIBUTION_ID"
+                data={dataCache['giftDistributions']} 
+                loading={loading && !dataCache['giftDistributions']}
+                columns={[
+                  { header: 'Gift', accessor: 'GIFT_NAME' },
+                  { header: 'Date', render: (item) => <span className="text-xs text-slate-500">{formatDate(item.DISTRIBUTION_DATE)}</span> },
+                  { header: 'Type', render: (item) => item.IS_FREE === 1 ? <Badge type="success">Complimentary</Badge> : <Badge type="default">Exchange</Badge> },
+                ]} 
+              />
+            </div>
+          </div>
+        );
+      default:
+        return null;
     }
   };
 
   return (
-    <div>
-      <div className="page-header">
-        <h1 className="page-title">Schedules</h1>
-        <p className="page-subtitle">Staff and volunteer scheduling</p>
-      </div>
-
-      <SearchBar value={search} onChange={setSearch} placeholder="Search schedules..." />
-
-      <div className="card animate-in">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Personnel</th>
-              <th>Date</th>
-              <th>Time</th>
-              <th>Type</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(sc => (
-              <tr key={sc.SCHEDULE_ID}>
-                <td><strong>{sc.PERSONNEL_NAME}</strong></td>
-                <td>{formatDate(sc.SCHEDULE_DATE)}</td>
-                <td>{sc.START_TIME} – {sc.END_TIME}</td>
-                <td><span className="badge badge-accent">{sc.TYPE}</span></td>
-                <td><span className={`badge ${statusColor(sc.AVAILABILITY_STATUS)}`}>{sc.AVAILABILITY_STATUS}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function PaymentsPage() {
-  const [payments, setPayments] = useState([]);
-  const [search, setSearch] = useState('');
-
-  useEffect(() => { fetchData('/payments').then(setPayments); }, []);
-
-  const filtered = useMemo(() => {
-    if (!search) return payments;
-    const s = search.toLowerCase();
-    return payments.filter(p =>
-      (p.PERSONNEL_NAME || '').toLowerCase().includes(s) ||
-      (p.PAYMENT_TYPE || '').toLowerCase().includes(s)
-    );
-  }, [payments, search]);
-
-  return (
-    <div>
-      <div className="page-header">
-        <h1 className="page-title">Payments</h1>
-        <p className="page-subtitle">Payroll and reimbursements</p>
-      </div>
-
-      <SearchBar value={search} onChange={setSearch} placeholder="Search payments..." />
-
-      <div className="card animate-in">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Personnel</th>
-              <th>Amount</th>
-              <th>Type</th>
-              <th>Date</th>
-              <th>Category</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(p => (
-              <tr key={p.PAYMENT_ID}>
-                <td><strong>{p.PERSONNEL_NAME}</strong></td>
-                <td style={{ color: COLORS.primary, fontWeight: 600 }}>{formatCurrency(p.AMOUNT)}</td>
-                <td><span className="badge badge-accent">{p.PAYMENT_TYPE}</span></td>
-                <td>{formatDate(p.PAYMENT_DATE)}</td>
-                <td>{p.IS_EMPLOYEE_PAY === 1 ? <span className="badge badge-primary">Employee Pay</span> : <span className="badge badge-muted">Other</span>}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function GiftTypesPage() {
-  const [gifts, setGifts] = useState([]);
-
-  useEffect(() => { fetchData('/gift-types').then(setGifts); }, []);
-
-  return (
-    <div>
-      <div className="page-header">
-        <h1 className="page-title">Gift Types</h1>
-        <p className="page-subtitle">Donor recognition gifts</p>
-      </div>
-
-      <div className="card animate-in">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Gift Name</th>
-              <th>Category</th>
-              <th>Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {gifts.map(g => (
-              <tr key={g.GIFT_TYPE_ID}>
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div className="list-item-avatar" style={{ width: 36, height: 36, fontSize: 14, background: `linear-gradient(135deg, ${COLORS.accent}, ${COLORS.accentLight})` }}>
-                      <Gift size={16} />
-                    </div>
-                    <strong>{g.NAME}</strong>
-                  </div>
-                </td>
-                <td><span className="badge badge-primary">{g.CATEGORY}</span></td>
-                <td style={{ fontWeight: 600 }}>{formatCurrency(g.VALUE)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function DistributionsPage() {
-  const [distributions, setDistributions] = useState([]);
-  const [search, setSearch] = useState('');
-
-  useEffect(() => { fetchData('/gift-distributions').then(setDistributions); }, []);
-
-  const filtered = useMemo(() => {
-    if (!search) return distributions;
-    const s = search.toLowerCase();
-    return distributions.filter(d =>
-      (d.GIFT_NAME || '').toLowerCase().includes(s) ||
-      (d.PERSONNEL_NAME || '').toLowerCase().includes(s)
-    );
-  }, [distributions, search]);
-
-  return (
-    <div>
-      <div className="page-header">
-        <h1 className="page-title">Gift Distributions</h1>
-        <p className="page-subtitle">Track gift deliveries</p>
-      </div>
-
-      <SearchBar value={search} onChange={setSearch} placeholder="Search distributions..." />
-
-      <div className="card animate-in">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Gift</th>
-              <th>Distributed By</th>
-              <th>Quantity</th>
-              <th>Date</th>
-              <th>Type</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(d => (
-              <tr key={d.DISTRIBUTION_ID}>
-                <td><strong>{d.GIFT_NAME}</strong></td>
-                <td>{d.PERSONNEL_NAME}</td>
-                <td>{d.QUANTITY}</td>
-                <td>{formatDate(d.DISTRIBUTION_DATE)}</td>
-                <td>{d.IS_FREE === 1 ? <span className="badge badge-success">Free</span> : <span className="badge badge-accent">Exchange</span>}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-// ============================================================================
-// MAIN APP
-// ============================================================================
-
-export default function App() {
-  const [currentRoute, setCurrentRoute] = useState('');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.slice(2) || '';
-      setCurrentRoute(hash);
-    };
-
-    handleHashChange();
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  const navigate = route => {
-    window.location.hash = `#/${route}`;
-  };
-
-  const renderPage = () => {
-    switch (currentRoute) {
-      case ROUTES.DONORS: return <DonorsPage />;
-      case ROUTES.DONATIONS: return <DonationsPage />;
-      case ROUTES.PERSONNEL: return <PersonnelPage />;
-      case ROUTES.SCHEDULES: return <SchedulesPage />;
-      case ROUTES.PAYMENTS: return <PaymentsPage />;
-      case ROUTES.GIFTS: return <GiftTypesPage />;
-      case ROUTES.DISTRIBUTIONS: return <DistributionsPage />;
-      default: return <Dashboard />;
-    }
-  };
-
-  return (
-    <>
-      <style>{styles}</style>
-      <div className="app-container">
-        <button className="mobile-menu-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-          {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-
-        <Sidebar
-          currentRoute={currentRoute}
-          onNavigate={navigate}
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
+    <div className="flex h-screen bg-[#F8FAFC] font-sans text-slate-600 selection:bg-indigo-100 selection:text-indigo-800">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+          onClick={() => setSidebarOpen(false)}
         />
+      )}
 
-        <main className="main-content">
-          {renderPage()}
-        </main>
-      </div>
-    </>
+      {/* Sidebar */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-slate-300 transform transition-transform duration-300 ease-in-out flex flex-col
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:relative lg:translate-x-0 shadow-2xl lg:shadow-none
+      `}>
+        <div className="p-8 border-b border-slate-800/50">
+          <div className="flex items-center space-x-3">
+            <div className="bg-gradient-to-tr from-indigo-500 to-violet-500 p-2.5 rounded-xl shadow-lg shadow-indigo-500/30">
+              <Heart className="w-6 h-6 text-white fill-current" />
+            </div>
+            <div>
+              <span className="block text-lg font-bold text-white tracking-tight">CharityOS</span>
+              <span className="block text-xs text-slate-500 font-medium tracking-wide">MANAGEMENT PLATFORM</span>
+            </div>
+          </div>
+        </div>
+
+        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto custom-scrollbar">
+          <p className="px-4 py-2 text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 mt-2">Main Menu</p>
+          {navItems.map((item) => {
+            const isActive = currentView === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setCurrentView(item.id);
+                  setSidebarOpen(false);
+                }}
+                className={`
+                  w-full flex items-center space-x-3.5 px-4 py-3.5 rounded-xl transition-all duration-200 group
+                  ${isActive 
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50' 
+                    : 'hover:bg-slate-800 hover:text-white text-slate-400'}
+                `}
+              >
+                <item.icon size={20} className={`transition-colors ${isActive ? 'text-indigo-200' : 'group-hover:text-white'}`} />
+                <span className="font-medium text-sm">{item.label}</span>
+                {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-300 shadow-[0_0_8px_rgba(165,180,252,0.8)]" />}
+              </button>
+            )
+          })}
+        </nav>
+        
+        <div className="p-4 bg-slate-800/50 m-4 rounded-2xl border border-slate-700/50">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-md">
+              AD
+            </div>
+            <div className="overflow-hidden">
+              <p className="text-sm font-bold text-white truncate">Administrator</p>
+              <p className="text-xs text-slate-400 truncate">admin@charity.org</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col h-full overflow-hidden relative">
+        {/* Top Header */}
+        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 h-20 flex items-center justify-between px-6 lg:px-10 z-30 sticky top-0">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden text-slate-500 hover:text-slate-800 p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <Menu size={24} />
+            </button>
+            
+            <div>
+              <h1 className="text-xl font-bold text-slate-800">
+                {navItems.find(n => n.id === currentView)?.label}
+              </h1>
+              <p className="text-xs text-slate-400 hidden sm:block">Welcome back, here is what's happening today.</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 sm:gap-6">
+            <div className="hidden md:block text-right">
+              <p className="text-xs font-semibold text-slate-500">System Status</p>
+              <div className="flex items-center justify-end gap-1.5">
+                <div className={`w-2 h-2 rounded-full ${error ? 'bg-rose-500' : 'bg-emerald-500 animate-pulse'}`}></div>
+                <span className={`text-xs font-bold ${error ? 'text-rose-600' : 'text-emerald-600'}`}>
+                  {error ? 'Connection Issues' : 'Online'}
+                </span>
+              </div>
+            </div>
+            
+            <div className="h-8 w-[1px] bg-slate-200 hidden md:block"></div>
+
+            <button className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all relative">
+              <AlertCircle size={20} />
+              {error && <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border border-white"></span>}
+            </button>
+          </div>
+        </header>
+
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-10 pb-20 scroll-smooth">
+          {renderContent()}
+        </div>
+      </main>
+    </div>
   );
 }
